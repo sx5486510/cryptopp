@@ -1,4 +1,4 @@
-//Std imports
+﻿//Std imports
 #include <string>
 #include <iostream>
 #include <exception>
@@ -83,6 +83,7 @@ using CryptoPP::CFB_Mode;
 using namespace v8;
 using namespace std;
 
+#if 0
 Persistent<Function> KeyRing::constructor;
 
 KeyRing::KeyRing(string filename, string passphrase) : filename_(filename), keyPair(0){
@@ -1421,3 +1422,66 @@ std::string KeyRing::decryptFile(std::string const& filename, std::string const&
 	StringSource(encryptedStr, true, new StreamTransformationFilter(d, new StringSink(decrypted)));
 	return decrypted;
 }
+
+#endif
+
+
+void ECB_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+	if (info.Length() < 1)
+		return THROW_ERROR_EXCEPTION("You must provide one argument.");
+
+	Local<Object> sKeysKey = info[0]->ToObject();
+	Local<Object> cipherText = info[1]->ToObject();
+
+	if (!Buffer::HasInstance(sKey))
+		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
+
+	std::string outstr;
+	//Ìîkey  
+	SecByteBlock key(AES::MAX_KEYLENGTH);
+	memset(key, 0x30, key.size());
+	sKey.size() <= AES::MAX_KEYLENGTH ? memcpy(key, sKey.c_str(), sKey.size()) : memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
+
+	ECB_Mode<AES >::Decryption ecbDecryption((byte *)key, AES::MAX_KEYLENGTH);
+
+	HexDecoder decryptor(new StreamTransformationFilter(ecbDecryption, new StringSink(outstr)));
+	decryptor.Put((byte *)cipherText, strlen(cipherText));
+	decryptor.MessageEnd();
+
+	// char crytoNightHash[32] = { 0 };
+	// cn_slow_hash_impl(Buffer::Data(sKey), Buffer::Length(sKey), crytoNightHash);
+
+	v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)outstr.data(), outstr.size()).ToLocalChecked();
+	// v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)crytoNightHash, sizeof(crytoNightHash)).ToLocalChecked();
+	info.GetReturnValue().Set(
+		returnValue
+	);
+}
+
+std::string ECB_AESDecryptStr(std::string sKey, const char *cipherText)
+{
+	try
+	{
+		//Ìîkey  
+		SecByteBlock key(AES::MAX_KEYLENGTH);
+		memset(key, 0x30, key.size());
+		sKey.size() <= AES::MAX_KEYLENGTH ? memcpy(key, sKey.c_str(), sKey.size()) : memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
+
+		ECB_Mode<AES >::Decryption ecbDecryption((byte *)key, AES::MAX_KEYLENGTH);
+
+		HexDecoder decryptor(new StreamTransformationFilter(ecbDecryption, new StringSink(outstr)));
+		decryptor.Put((byte *)cipherText, strlen(cipherText));
+		decryptor.MessageEnd();
+	}
+	catch (...)
+	{
+		outstr = "";
+	}
+	return outstr;
+}
+
+NAN_MODULE_INIT(init) {
+	Nan::Set(target, Nan::New("ECB_AESDecryptStr").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(ECB_AESDecryptStr)).ToLocalChecked());
+}
+
+NODE_MODULE(ECB_AESDecryptStr, init)

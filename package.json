@@ -26,5 +26,9 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Mowje/node-cryptopp/issues"
+  },
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "nan": "^2.7.0"
   }
 }

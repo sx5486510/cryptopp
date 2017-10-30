@@ -13,7 +13,9 @@ using CryptoPP::Integer;
 using CryptoPP::OID;
 
 #include <node.h>
+#include <nan.h>
 
+#if 0
 class KeyRing : public node::ObjectWrap{
 
 public:
@@ -72,5 +74,6 @@ private:
 	static v8::Handle<v8::Value> Clear(const v8::Arguments& args);
 	static v8::Persistent<v8::Function> constructor;
 };
+#endif
 
 #endif
