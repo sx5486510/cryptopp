@@ -1,10 +1,10 @@
 clean:
-	-rm -rf build
-	-rm *.key
+	#-rm -rf build
+	#-rm *.key
 
-clean-all: clean
-	cd cryptopp; \
-	make clean
+clean-all: #clean
+	#cd cryptopp; \
+	#make clean
 
 git-pull:
 	-git pull
@@ -20,7 +20,7 @@ build: cryptopp/GNUmakefile-cross
 	cd cryptopp && make clean && make static
 	node-gyp rebuild
 
-rebuild: clean build
+rebuild: #clean build
 
 test: build
 	cd cryptopp && make test
