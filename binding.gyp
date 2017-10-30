@@ -3,7 +3,10 @@
 		{
 			"target_name": "cryptopp",
 			"sources": [ "keyring.cc"],
-			"include_dirs": ["."],
+			"include_dirs": [
+			".",
+                "<!(node -e \"require('nan')\")",
+			],
 			"libraries": ["../cryptopp/libcryptopp.a"],
 			"cflags!": ["-fno-exceptions"],
 			"cflags_cc!": ["-fno-exceptions", "-fno-rtti"],
