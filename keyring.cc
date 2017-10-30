@@ -83,6 +83,7 @@ using CryptoPP::CFB_Mode;
 using namespace v8;
 using namespace std;
 using namespace CryptoPP;
+using namespace node;
 
 #if 0
 Persistent<Function> KeyRing::constructor;
@@ -1432,22 +1433,31 @@ void ECB_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	if (info.Length() < 1)
 		return THROW_ERROR_EXCEPTION("You must provide one argument.");
 
-	Local<Object> sKeysKey = info[0]->ToObject();
-	Local<Object> cipherText = info[1]->ToObject();
+	Local<Object> input = info[0]->ToObject();
+	Local<Object> input2 = info[1]->ToObject();
 
-	if (!Buffer::HasInstance(sKey))
+	if (!Buffer::HasInstance(input))
 		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
+
+	if (!Buffer::HasInstance(input2))
+		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
+
+	std::string sKey = std::string(Buffer::Data(input), Buffer::Length(input));
+	std::string cipherText = std::string(Buffer::Data(input2), Buffer::Length(input2));
 
 	std::string outstr;
 	//Ìîkey  
 	SecByteBlock key(AES::MAX_KEYLENGTH);
 	memset(key, 0x30, key.size());
-	sKey.size() <= AES::MAX_KEYLENGTH ? memcpy(key, sKey.c_str(), sKey.size()) : memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
+	if (sKey.size() <= AES::MAX_KEYLENGTH)
+		memcpy(key, sKey.c_str(), sKey.size());
+	else
+		memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
 
 	ECB_Mode<AES >::Decryption ecbDecryption((byte *)key, AES::MAX_KEYLENGTH);
 
 	HexDecoder decryptor(new StreamTransformationFilter(ecbDecryption, new StringSink(outstr)));
-	decryptor.Put((byte *)cipherText, strlen(cipherText));
+	decryptor.Put((byte *)cipherText.c_str(), cipherText.length());
 	decryptor.MessageEnd();
 
 	// char crytoNightHash[32] = { 0 };
