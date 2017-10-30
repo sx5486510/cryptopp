@@ -82,6 +82,7 @@ using CryptoPP::CFB_Mode;
 
 using namespace v8;
 using namespace std;
+using namespace CryptoPP;
 
 #if 0
 Persistent<Function> KeyRing::constructor;
@@ -1425,6 +1426,7 @@ std::string KeyRing::decryptFile(std::string const& filename, std::string const&
 
 #endif
 
+#define THROW_ERROR_EXCEPTION(x) Nan::ThrowError(x)
 
 void ECB_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	if (info.Length() < 1)
@@ -1456,28 +1458,6 @@ void ECB_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	info.GetReturnValue().Set(
 		returnValue
 	);
-}
-
-std::string ECB_AESDecryptStr(std::string sKey, const char *cipherText)
-{
-	try
-	{
-		//Ìîkey  
-		SecByteBlock key(AES::MAX_KEYLENGTH);
-		memset(key, 0x30, key.size());
-		sKey.size() <= AES::MAX_KEYLENGTH ? memcpy(key, sKey.c_str(), sKey.size()) : memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
-
-		ECB_Mode<AES >::Decryption ecbDecryption((byte *)key, AES::MAX_KEYLENGTH);
-
-		HexDecoder decryptor(new StreamTransformationFilter(ecbDecryption, new StringSink(outstr)));
-		decryptor.Put((byte *)cipherText, strlen(cipherText));
-		decryptor.MessageEnd();
-	}
-	catch (...)
-	{
-		outstr = "";
-	}
-	return outstr;
 }
 
 NAN_MODULE_INIT(init) {
