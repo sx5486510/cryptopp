@@ -8,13 +8,13 @@ clean-all: clean
 
 git-pull:
 	-git pull
-	git submodule init
-	git submodule update
-	git submodule status
-	cd cryptopp && git pull origin master
+	# git submodule init
+	# git submodule update
+	# git submodule status
+	# cd cryptopp && git pull origin master
 
 cryptopp/GNUmakefile-cross:
-	git clone https://github.com/Mowje/cryptopp.git
+	#git clone https://github.com/Mowje/cryptopp.git
 
 build: cryptopp/GNUmakefile-cross
 	cd cryptopp && make clean && make static
