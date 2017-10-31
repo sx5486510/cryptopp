@@ -13,7 +13,7 @@ git-pull:
 	# git submodule status
 	# cd cryptopp && git pull origin master
 
-cryptopp/GNUmakefile-cross:
+#cryptopp/GNUmakefile-cross:
 	#git clone https://github.com/Mowje/cryptopp.git
 
 build: cryptopp/GNUmakefile-cross
