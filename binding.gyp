@@ -2,7 +2,10 @@
 	"targets" :[
 		{
 			"target_name": "cryptopp",
-			"sources": [ "keyring.cc"],
+			"sources": [
+			"keyring.cpp",
+			"cryptopp/misc.cpp",
+			],
 			"include_dirs": [
 			".",
                 "<!(node -e \"require('nan')\")",
