@@ -1383,10 +1383,10 @@ void ECB_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	if (!Buffer::HasInstance(input2))
 		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
 
+	THROW_ERROR_EXCEPTION("111");
+
 	std::string sKey = std::string(Buffer::Data(input), Buffer::Length(input));
 	std::string cipherText = std::string(Buffer::Data(input2), Buffer::Length(input2));
-
-	THROW_ERROR_EXCEPTION(sKey.c_str());
 
 	std::string outstr;
 	SecByteBlock key(AES::MAX_KEYLENGTH);
