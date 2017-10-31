@@ -3,7 +3,7 @@
 		{
 			"target_name": "cryptopp",
 			"sources": [
-			"keyring.cpp",
+			"main.cpp",
 			"cryptopp/misc.cpp",
 			"cryptopp/cryptlib.cpp",
 			"cryptopp/modes.cpp",
