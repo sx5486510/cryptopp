@@ -24,6 +24,7 @@
 #include "queue.h"
 #include "algparam.h"
 #include "stdcpp.h"
+#include <nan.h>
 
 NAMESPACE_BEGIN(CryptoPP)
 
