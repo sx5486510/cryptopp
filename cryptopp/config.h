@@ -376,6 +376,9 @@ NAMESPACE_END
 #define CRYPTOPP_UNCAUGHT_EXCEPTION_AVAILABLE
 #endif
 
+// ½ûÓÃASM
+#define CRYPTOPP_DISABLE_X86ASM
+
 #ifdef CRYPTOPP_DISABLE_X86ASM		// for backwards compatibility: this macro had both meanings
 #define CRYPTOPP_DISABLE_ASM
 #define CRYPTOPP_DISABLE_SSE2
