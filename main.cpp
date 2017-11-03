@@ -9,7 +9,6 @@
 
 //Node and class headers import
 #include <node.h>
-#include "keyring.h"
 
 #include <cryptopp/aes.h>
 
