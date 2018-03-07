@@ -25,7 +25,6 @@
   "author": "Batikh Souri",
   "license": "MIT",
   "dependencies": {
-    "bindings": "^1.3.0",
-	"nan" : "2"
+    "bindings": "^1.3.0"
   }
 }
