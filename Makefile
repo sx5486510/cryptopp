@@ -17,8 +17,8 @@ git-pull:
 	#git clone https://github.com/Mowje/cryptopp.git
 
 build: #cryptopp/GNUmakefile-cross
-npm install nan;
 	#cd cryptopp && make clean && make static
+	npm install nan
 	node-gyp rebuild
 
 rebuild: clean build
