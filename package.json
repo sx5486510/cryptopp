@@ -25,7 +25,7 @@
   "author": "Batikh Souri",
   "license": "MIT",
   "dependencies": {
-    "bindings": "^1.3.0",
-    "nan": "latest"
-  }
+    "bindings": "^1.3.0"
+  },
+  "gypfile": true
 }
