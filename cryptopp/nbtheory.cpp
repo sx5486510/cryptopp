@@ -5,17 +5,15 @@
 #ifndef CRYPTOPP_IMPORTS
 
 #include "nbtheory.h"
-#include "integer.h"
 #include "modarith.h"
 #include "algparam.h"
-#include "smartptr.h"
-#include "misc.h"
 
 #include <math.h>
 #include <vector>
 
 #ifdef _OPENMP
-# include <omp.h>
+// needed in MSVC 2005 to generate correct manifest
+#include <omp.h>
 #endif
 
 NAMESPACE_BEGIN(CryptoPP)
@@ -28,7 +26,7 @@ struct NewPrimeTable
 	{
 		const unsigned int maxPrimeTableSize = 3511;
 
-		member_ptr<std::vector<word16> > pPrimeTable(new std::vector<word16>);
+		std::auto_ptr<std::vector<word16> > pPrimeTable(new std::vector<word16>);
 		std::vector<word16> &primeTable = *pPrimeTable;
 		primeTable.reserve(maxPrimeTableSize);
 
@@ -43,7 +41,7 @@ struct NewPrimeTable
 					break;
 			if (j == testEntriesEnd)
 			{
-				primeTable.push_back(word16(p));
+				primeTable.push_back(p);
 				testEntriesEnd = UnsignedMin(54U, primeTable.size());
 			}
 		}
@@ -310,7 +308,7 @@ PrimeSieve::PrimeSieve(const Integer &first, const Integer &last, const Integer 
 bool PrimeSieve::NextCandidate(Integer &c)
 {
 	bool safe = SafeConvert(std::find(m_sieve.begin()+m_next, m_sieve.end(), false) - m_sieve.begin(), m_next);
-	CRYPTOPP_UNUSED(safe); assert(safe);
+	assert(safe);
 	if (m_next == m_sieve.size())
 	{
 		m_first += long(m_sieve.size())*m_step;

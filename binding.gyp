@@ -132,6 +132,9 @@
 "cryptopp/zinflate.cpp",
 "cryptopp/zlib.cpp",
 
+"cryptopp/x64masm.asm",
+"cryptopp/x64dll.asm",
+
 			],
 			"include_dirs": [
 			".",

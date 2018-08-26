@@ -7,11 +7,7 @@
 #ifndef CRYPTOPP_IMPORTS
 #define CRYPTOPP_DEFAULT_NO_DLL
 #endif
-
 #include "dll.h"
-#include "cryptlib.h"
-#include "smartptr.h"
-#include "filters.h"
 #include "oids.h"
 
 USING_NAMESPACE(CryptoPP)

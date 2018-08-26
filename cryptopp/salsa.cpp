@@ -3,41 +3,20 @@
 // use "cl /EP /P /DCRYPTOPP_GENERATE_X64_MASM salsa.cpp" to generate MASM code
 
 #include "pch.h"
-#include "config.h"
 
 #ifndef CRYPTOPP_GENERATE_X64_MASM
 
 #include "salsa.h"
-#include "argnames.h"
 #include "misc.h"
+#include "argnames.h"
 #include "cpu.h"
-
-#if CRYPTOPP_MSC_VERSION
-# pragma warning(disable: 4702 4740)
-#endif
-
-// TODO: work around GCC 4.8+ issue with SSE2 ASM until the exact details are known
-//   and fix is released. Duplicate with "valgrind ./cryptest.exe tv salsa"
-// Clang due to "Inline assembly operands don't work with .intel_syntax"
-//   https://llvm.org/bugs/show_bug.cgi?id=24232
-#if defined(CRYPTOPP_DISABLE_SALSA_ASM)
-# undef CRYPTOPP_X86_ASM_AVAILABLE
-# undef CRYPTOPP_X32_ASM_AVAILABLE
-# undef CRYPTOPP_X64_ASM_AVAILABLE
-# undef CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE
-# undef CRYPTOPP_BOOL_SSSE3_ASM_AVAILABLE
-# define CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE 0
-# define CRYPTOPP_BOOL_SSSE3_ASM_AVAILABLE 0
-#endif
 
 NAMESPACE_BEGIN(CryptoPP)
 
-#if !defined(NDEBUG) && !defined(CRYPTOPP_DOXYGEN_PROCESSING)
 void Salsa20_TestInstantiations()
 {
 	Salsa20::Encryption x;
 }
-#endif
 
 void Salsa20_Policy::CipherSetKey(const NameValuePairs &params, const byte *key, size_t length)
 {
@@ -61,9 +40,7 @@ void Salsa20_Policy::CipherSetKey(const NameValuePairs &params, const byte *key,
 
 void Salsa20_Policy::CipherResynchronize(byte *keystreamBuffer, const byte *IV, size_t length)
 {
-	CRYPTOPP_UNUSED(keystreamBuffer), CRYPTOPP_UNUSED(length);
 	assert(length==8);
-
 	GetBlock<word32, LittleEndian> get(IV);
 	get(m_state[14])(m_state[11]);
 	m_state[8] = m_state[5] = 0;
@@ -75,7 +52,7 @@ void Salsa20_Policy::SeekToIteration(lword iterationCount)
 	m_state[5] = (word32)SafeRightShift<32>(iterationCount);
 }
 
-#if (CRYPTOPP_BOOL_X86 || CRYPTOPP_BOOL_X32 || CRYPTOPP_BOOL_X64) && !defined(CRYPTOPP_DISABLE_SALSA_ASM)
+#if CRYPTOPP_BOOL_X86 || CRYPTOPP_BOOL_X64
 unsigned int Salsa20_Policy::GetAlignment() const
 {
 #if CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE
@@ -103,9 +80,7 @@ void Salsa20_OperateKeystream(byte *output, const byte *input, size_t iterationC
 }
 #endif
 
-#if CRYPTOPP_MSC_VERSION
-# pragma warning(disable: 4731)	// frame pointer register 'ebp' modified by inline assembly code
-#endif
+#pragma warning(disable: 4731)	// frame pointer register 'ebp' modified by inline assembly code
 
 void Salsa20_Policy::OperateKeystream(KeystreamOperation operation, byte *output, const byte *input, size_t iterationCount)
 {
@@ -173,7 +148,7 @@ void Salsa20_Policy::OperateKeystream(KeystreamOperation operation, byte *output
 	#ifdef __GNUC__
 		__asm__ __volatile__
 		(
-			INTEL_NOPREFIX
+			".intel_syntax noprefix;"
 			AS_PUSH_IF86(	bx)
 	#else
 		void *s = m_state.data();
@@ -481,7 +456,7 @@ void Salsa20_Policy::OperateKeystream(KeystreamOperation operation, byte *output
 		AS_POP_IF86(	bp)
 #ifdef __GNUC__
 		AS_POP_IF86(	bx)
-		ATT_PREFIX
+		".att_syntax prefix;"
 	#if CRYPTOPP_BOOL_X64
 			: "+r" (input), "+r" (output), "+r" (iterationCount)
 			: "r" (m_rounds), "r" (m_state.m_ptr), "r" (workspace)
@@ -590,7 +565,6 @@ void XSalsa20_Policy::CipherSetKey(const NameValuePairs &params, const byte *key
 
 void XSalsa20_Policy::CipherResynchronize(byte *keystreamBuffer, const byte *IV, size_t length)
 {
-	CRYPTOPP_UNUSED(keystreamBuffer), CRYPTOPP_UNUSED(length);
 	assert(length==24);
 
 	word32 x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;

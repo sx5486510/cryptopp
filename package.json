@@ -1,16 +1,38 @@
 {
-  "name": "cryptopp",
-  "version": "0.2.4",
-  "description": "Node.js static bindings for the Crypto++ library",
-  "main": "node-cryptopp.js",
-  "scripts": {
-    "test": "make test",
-    "preinstall": "make build"
-  },
-  "repository": {
+  "_development": true,
+  "_from": "git+https://github.com/sx5486510/ttt.git",
+  "_id": "cryptopp@0.2.4",
+  "_inBundle": false,
+  "_location": "/cryptopp",
+  "_phantomChildren": {},
+  "_requested": {
     "type": "git",
-    "url": "https://github.com/sx5486510/ttt.git"
+    "raw": "git+https://github.com/sx5486510/ttt.git",
+    "rawSpec": "git+https://github.com/sx5486510/ttt.git",
+    "saveSpec": "git+https://github.com/sx5486510/ttt.git",
+    "fetchSpec": "https://github.com/sx5486510/ttt.git",
+    "gitCommittish": null
   },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "git+https://github.com/sx5486510/ttt.git#888ab64e5bf8bd6dd866988ce3a82a876e52bbb7",
+  "_spec": "git+https://github.com/sx5486510/ttt.git",
+  "_where": "e:\\src\\server",
+  "author": {
+    "name": "Batikh Souri"
+  },
+  "bugs": {
+    "url": "https://github.com/sx5486510/ttt/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "nan": "^2.11.0"
+  },
+  "deprecated": false,
+  "description": "Node.js static bindings for the Crypto++ library",
+  "homepage": "https://github.com/sx5486510/ttt#readme",
   "keywords": [
     "crypto",
     "cryptography",
@@ -22,9 +44,16 @@
     "cryptopp",
     "crypto++"
   ],
-  "author": "Batikh Souri",
   "license": "MIT",
-  "dependencies": {
-    "bindings": "^1.3.0"
-  }
+  "main": "node-cryptopp.js",
+  "name": "cryptopp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sx5486510/ttt.git"
+  },
+  "scripts": {
+    "preinstall": "make build",
+    "test": "make test"
+  },
+  "version": "0.2.4"
 }

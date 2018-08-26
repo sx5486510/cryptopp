@@ -6,10 +6,7 @@
 // (http://www.kb.cert.org/vuls/id/368819).
 
 #include "pch.h"
-
 #include "zinflate.h"
-#include "secblock.h"
-#include "smartptr.h"
 
 NAMESPACE_BEGIN(CryptoPP)
 
@@ -39,7 +36,7 @@ inline bool LowFirstBitReader::FillBuffer(unsigned int length)
 inline unsigned long LowFirstBitReader::PeekBits(unsigned int length)
 {
 	bool result = FillBuffer(length);
-	CRYPTOPP_UNUSED(result); assert(result);
+	assert(result);
 	return m_buffer & (((unsigned long)1 << length) - 1);
 }
 
@@ -113,11 +110,9 @@ void HuffmanDecoder::Initialize(const unsigned int *codeBits, unsigned int nCode
 		nextCode[i] = code;
 	}
 
-	// MAX_CODE_BITS is 32, m_maxCodeBits may be smaller.
-	const unsigned long long shiftedMaxCode = (1ULL << m_maxCodeBits);
-	if (code > shiftedMaxCode - blCount[m_maxCodeBits])
+	if (code > (1 << m_maxCodeBits) - blCount[m_maxCodeBits])
 		throw Err("codes oversubscribed");
-	else if (m_maxCodeBits != 1 && code < shiftedMaxCode - blCount[m_maxCodeBits])
+	else if (m_maxCodeBits != 1 && code < (1 << m_maxCodeBits) - blCount[m_maxCodeBits])
 		throw Err("codes incomplete");
 
 	// compute a vector of <code, length, value> triples sorted by code
@@ -143,10 +138,8 @@ void HuffmanDecoder::Initialize(const unsigned int *codeBits, unsigned int nCode
 	m_normalizedCacheMask = NormalizeCode(m_cacheMask, m_cacheBits);
 	assert(m_normalizedCacheMask == BitReverse(m_cacheMask));
 
-	const unsigned long long shiftedCache = (1ULL << m_cacheBits);
-	assert(shiftedCache <= SIZE_MAX);
-	if (m_cache.size() != shiftedCache)
-		m_cache.resize((size_t)shiftedCache);
+	if (m_cache.size() != size_t(1) << m_cacheBits)
+		m_cache.resize(1 << m_cacheBits);
 
 	for (i=0; i<m_cache.size(); i++)
 		m_cache[i].type = 0;
@@ -184,7 +177,7 @@ inline unsigned int HuffmanDecoder::Decode(code_t code, /* out */ value_t &value
 	assert(m_codeToValue.size() > 0);
 	LookupEntry &entry = m_cache[code & m_cacheMask];
 
-	code_t normalizedCode = 0;
+	code_t normalizedCode;
 	if (entry.type != 1)
 		normalizedCode = BitReverse(code);
 
@@ -208,9 +201,7 @@ inline unsigned int HuffmanDecoder::Decode(code_t code, /* out */ value_t &value
 
 bool HuffmanDecoder::Decode(LowFirstBitReader &reader, value_t &value) const
 {
-	bool result = reader.FillBuffer(m_maxCodeBits);
-	if(!result) return false;
-
+	reader.FillBuffer(m_maxCodeBits);
 	unsigned int codeBits = Decode(reader.PeekBuffer(), value);
 	if (codeBits > reader.BitsBuffered())
 		return false;
@@ -222,9 +213,7 @@ bool HuffmanDecoder::Decode(LowFirstBitReader &reader, value_t &value) const
 
 Inflator::Inflator(BufferedTransformation *attachment, bool repeat, int propagation)
 	: AutoSignaling<Filter>(propagation)
-	, m_state(PRE_STREAM), m_repeat(repeat), m_eof(0), m_wrappedAround(0)
-	, m_blockType(0xff), m_storedLen(0xffff), m_nextDecode(), m_literal(0)
-	, m_distance(0), m_reader(m_inQueue), m_current(0), m_lastFlush(0)
+	, m_state(PRE_STREAM), m_repeat(repeat), m_reader(m_inQueue)
 {
 	Detach(attachment);
 }
@@ -413,7 +402,7 @@ void Inflator::DecodeHeader()
 			HuffmanDecoder codeLengthDecoder(codeLengths, 19);
 			for (i = 0; i < hlit+257+hdist+1; )
 			{
-				unsigned int k = 0, count = 0, repeater = 0;
+				unsigned int k, count, repeater;
 				bool result = codeLengthDecoder.Decode(m_reader, k);
 				if (!result)
 					throw UnexpectedEndErr();
@@ -484,11 +473,9 @@ bool Inflator::DecodeBody()
 			size_t size;
 			const byte *block = m_inQueue.Spy(size);
 			size = UnsignedMin(m_storedLen, size);
-			assert(size <= 0xffff);
-			
 			OutputString(block, size);
 			m_inQueue.Skip(size);
-			m_storedLen = m_storedLen - (word16)size;
+			m_storedLen -= (word16)size;
 			if (m_storedLen == 0)
 				blockEnd = true;
 		}
@@ -560,9 +547,6 @@ bool Inflator::DecodeBody()
 					OutputPast(m_literal, m_distance);
 				}
 			}
-			break;
-		default:
-			assert(0);
 		}
 	}
 	if (blockEnd)
@@ -606,7 +590,7 @@ struct NewFixedLiteralDecoder
 		std::fill(codeLengths + 144, codeLengths + 256, 9);
 		std::fill(codeLengths + 256, codeLengths + 280, 7);
 		std::fill(codeLengths + 280, codeLengths + 288, 8);
-		member_ptr<HuffmanDecoder> pDecoder(new HuffmanDecoder);
+		std::auto_ptr<HuffmanDecoder> pDecoder(new HuffmanDecoder);
 		pDecoder->Initialize(codeLengths, 288);
 		return pDecoder.release();
 	}
@@ -618,7 +602,7 @@ struct NewFixedDistanceDecoder
 	{
 		unsigned int codeLengths[32];
 		std::fill(codeLengths + 0, codeLengths + 32, 5);
-		member_ptr<HuffmanDecoder> pDecoder(new HuffmanDecoder);
+		std::auto_ptr<HuffmanDecoder> pDecoder(new HuffmanDecoder);
 		pDecoder->Initialize(codeLengths, 32);
 		return pDecoder.release();
 	}

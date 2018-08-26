@@ -1,12 +1,9 @@
 // rw.cpp - written and placed in the public domain by Wei Dai
 
 #include "pch.h"
-
 #include "rw.h"
-#include "asn.h"
-#include "integer.h"
 #include "nbtheory.h"
-#include "modarith.h"
+#include "asn.h"
 
 #ifndef CRYPTOPP_IMPORTS
 
@@ -65,7 +62,6 @@ Integer RWFunction::ApplyFunction(const Integer &in) const
 
 bool RWFunction::Validate(RandomNumberGenerator &rng, unsigned int level) const
 {
-	CRYPTOPP_UNUSED(rng), CRYPTOPP_UNUSED(level);
 	bool pass = true;
 	pass = pass && m_n > Integer::One() && m_n%8 == 5;
 	return pass;
@@ -130,12 +126,8 @@ Integer InvertibleRWFunction::CalculateInverse(RandomNumberGenerator &rng, const
 	DoQuickSanityCheck();
 	ModularArithmetic modn(m_n);
 	Integer r, rInv;
-	do {
-		// do this in a loop for people using small numbers for testing
+	do {	// do this in a loop for people using small numbers for testing
 		r.Randomize(rng, Integer::One(), m_n - Integer::One());
-		// Fix for CVE-2015-2141. Thanks to Evgeny Sidorov for reporting.
-		// Squaring to satisfy Jacobi requirements suggested by Jean-Pierre Münch.
-		r = modn.Square(r);
 		rInv = modn.MultiplicativeInverse(r);
 	} while (rInv.IsZero());
 	Integer re = modn.Square(r);

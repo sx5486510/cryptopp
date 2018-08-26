@@ -5,7 +5,6 @@
 #ifndef CRYPTOPP_IMPORTS
 
 #include "eprecomp.h"
-#include "integer.h"
 #include "asn.h"
 
 NAMESPACE_BEGIN(CryptoPP)

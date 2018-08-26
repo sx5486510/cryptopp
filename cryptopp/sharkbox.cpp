@@ -1,10 +1,6 @@
 #include "pch.h"
 #include "shark.h"
 
-#if CRYPTOPP_GCC_DIAGNOSTIC_AVAILABLE
-# pragma GCC diagnostic ignored "-Wmissing-braces"
-#endif
-
 NAMESPACE_BEGIN(CryptoPP)
 
 const byte SHARK::Enc::sbox[256] = {

@@ -1,7 +1,6 @@
 // network.cpp - written and placed in the public domain by Wei Dai
 
 #include "pch.h"
-
 #include "network.h"
 #include "wait.h"
 
@@ -16,9 +15,7 @@ lword LimitedBandwidth::ComputeCurrentTransceiveLimit()
 	if (!m_maxBytesPerSecond)
 		return ULONG_MAX;
 
-	const double curTime = GetCurTimeAndCleanUp();
-	CRYPTOPP_UNUSED(curTime);
-
+	double curTime = GetCurTimeAndCleanUp();
 	lword total = 0;
 	for (OpQueue::size_type i=0; i!=m_ops.size(); ++i)
 		total += m_ops[i].second;
@@ -230,8 +227,8 @@ bool NonblockingSink::IsolatedFlush(bool hardFlush, bool blocking)
 
 NetworkSource::NetworkSource(BufferedTransformation *attachment)
 	: NonblockingSource(attachment), m_buf(1024*16)
-	,  m_putSize(0), m_dataBegin(0), m_dataEnd(0)
-	,  m_waitingForResult(false), m_outputBlocked(false)
+	, m_waitingForResult(false), m_outputBlocked(false)
+	, m_dataBegin(0), m_dataEnd(0)
 {
 }
 

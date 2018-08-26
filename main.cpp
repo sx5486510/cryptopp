@@ -9,6 +9,7 @@
 
 //Node and class headers import
 #include <node.h>
+#include <nan.h>
 
 #include <cryptopp/aes.h>
 
@@ -120,7 +121,7 @@ void CBC_AESEncryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info)
 
 	std::string sKey = std::string(Buffer::Data(input), Buffer::Length(input));
 	std::string plain = std::string(Buffer::Data(input2), Buffer::Length(input2));
-	std::string sIV = std::string(Buffer::Data(input2), Buffer::Length(input3));
+	std::string sIV = std::string(Buffer::Data(input3), Buffer::Length(input3));
 	string cipher, encoded;
 
 	SecByteBlock key(AES::MAX_KEYLENGTH);
@@ -142,11 +143,10 @@ void CBC_AESEncryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info)
 	// Pretty print
 		encoded.clear();
 		StringSource(cipher, true, new Base64Encoder(new StringSink(encoded))); // StringSource
-		cout << "cipher text: " << encoded << endl;
 	}
 	catch (const CryptoPP::Exception& e)
 	{
-		cerr << e.what() << endl;
+		cout << e.what() << endl;
 	}
 
 	v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)encoded.data(), encoded.size()).ToLocalChecked();
@@ -161,7 +161,7 @@ void CBC_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 	Local<Object> input = info[0]->ToObject();
 	Local<Object> input2 = info[1]->ToObject();
-	Local<Object> input3 = info[3]->ToObject();
+	Local<Object> input3 = info[2]->ToObject();
 
 	if (!Buffer::HasInstance(input))
 		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
@@ -169,13 +169,20 @@ void CBC_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	if (!Buffer::HasInstance(input2))
 		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
 
+	if (!Buffer::HasInstance(input3))
+		return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
+
 	std::string sKey = std::string(Buffer::Data(input), Buffer::Length(input));
 	std::string cipherText = std::string(Buffer::Data(input2), Buffer::Length(input2));
-	std::string sIV = std::string(Buffer::Data(input2), Buffer::Length(input3));
+	std::string sIV = std::string(Buffer::Data(input3), Buffer::Length(input3));
 	std::string recovered;
 
-	SecByteBlock key(AES::MAX_KEYLENGTH);
-	memset(key, 0x30, key.size());
+	cout << sKey.c_str() << endl;
+	cout << cipherText.c_str() << endl;
+	cout << sIV.c_str() << endl;
+
+	/*SecByteBlock*/ byte key[AES::MAX_KEYLENGTH];
+	memset((void *)&key[0], 0x30, AES::MAX_KEYLENGTH);
 	sKey.size() <= AES::MAX_KEYLENGTH ? memcpy(key, sKey.c_str(), sKey.size()) :
 		memcpy(key, sKey.c_str(), AES::MAX_KEYLENGTH);
 
@@ -186,26 +193,17 @@ void CBC_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 	try
 	{
-		Base64Decoder decoder;
-		size_t puted = decoder.PutMessageEnd((const byte*)cipherText.c_str(), cipherText.size(), -1, false);  //如果base64中有\n请使用true
-		if (decoder.AnyRetrievable()) {
-			lword neededLength = decoder.MaxRetrievable();
-			char* buffer = new char[neededLength];
-			decoder.Get((byte*)buffer, neededLength);
-			std::string st;
-			st.assign(buffer, neededLength);
+		CBC_Mode< AES >::Decryption d;
+		d.SetKeyWithIV(key, sizeof(key), iv);
 
-			CBC_Mode< AES >::Decryption d;
-			d.SetKeyWithIV(key, key.size(), iv);
+		// The StreamTransformationFilter removes
+		// 	padding as required.
 
-			// The StreamTransformationFilter removes
-			// 	padding as required.
-			StringSource s(st/*cipher*/, true, new StreamTransformationFilter(d, (new StringSink(recovered)))); // StringSource
-		}
+		StringSource s(cipherText/*cipher*/, true, new Base64Decoder(new StreamTransformationFilter(d, (new StringSink(recovered))))); // StringSource
 	}
 	catch (const CryptoPP::Exception& e)
 	{
-		cerr << e.what() << endl;
+		cout << e.what() << endl;
 	}
 
 	v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)recovered.data(), recovered.size()).ToLocalChecked();
@@ -220,3 +218,5 @@ NAN_MODULE_INIT(init) {
 	Nan::Set(target, Nan::New("CBC_AESEncryptStr").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(CBC_AESEncryptStr)).ToLocalChecked());
 	Nan::Set(target, Nan::New("CBC_AESDecryptStr").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(CBC_AESDecryptStr)).ToLocalChecked());
 }
+
+NODE_MODULE(ECB_AESDecryptStr, init)

@@ -1,8 +1,6 @@
 // tiger.cpp - written and placed in the public domain by Wei Dai
 
 #include "pch.h"
-#include "config.h"
-
 #include "tiger.h"
 #include "misc.h"
 #include "cpu.h"
@@ -34,14 +32,14 @@ void Tiger::TruncatedFinal(byte *hash, size_t size)
 
 void Tiger::Transform (word64 *digest, const word64 *X)
 {
-#if CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE && (CRYPTOPP_BOOL_X86 || CRYPTOPP_BOOL_X32)
+#if CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE && CRYPTOPP_BOOL_X86
 	if (HasSSE2())
 	{
 #ifdef __GNUC__
 		__asm__ __volatile__
 		(
-		INTEL_NOPREFIX
-		AS_PUSH_IF86(bx)
+		".intel_syntax noprefix;"
+		AS1(	push	ebx)
 #else
 	#if _MSC_VER < 1300
 		const word64 *t = table;
@@ -61,7 +59,7 @@ void Tiger::Transform (word64 *digest, const word64 *X)
 		AS2(	mov		ecx, esp)
 		AS2(	and		esp, 0xfffffff0)
 		AS2(	sub		esp, 8*8)
-		AS_PUSH_IF86(cx)
+		AS1(	push	ecx)
 
 #define SSE2_round(a,b,c,x,mul) \
 		AS2(	pxor	c, [x])\
@@ -179,19 +177,11 @@ void Tiger::Transform (word64 *digest, const word64 *X)
 		AS2(	psubq	mm3, mm4)\
 		AS2(	movq	[Y+7*8], mm3)
 
-#if CRYPTOPP_BOOL_X32
 		SSE2_pass(mm0, mm1, mm2, 5, esi)
-		SSE2_key_schedule(esp+8, esi)	
-		SSE2_pass(mm2, mm0, mm1, 7, esp+8)
-		SSE2_key_schedule(esp+8, esp+8)
-		SSE2_pass(mm1, mm2, mm0, 9, esp+8)
-#else
-		SSE2_pass(mm0, mm1, mm2, 5, esi)
-		SSE2_key_schedule(esp+4, esi)	
+		SSE2_key_schedule(esp+4, esi)
 		SSE2_pass(mm2, mm0, mm1, 7, esp+4)
 		SSE2_key_schedule(esp+4, esp+4)
 		SSE2_pass(mm1, mm2, mm0, 9, esp+4)
-#endif
 
 		AS2(	pxor	mm0, [eax+0*8])
 		AS2(	movq	[eax+0*8], mm0)
@@ -200,12 +190,11 @@ void Tiger::Transform (word64 *digest, const word64 *X)
 		AS2(	paddq	mm2, [eax+2*8])
 		AS2(	movq	[eax+2*8], mm2)
 
-		AS_POP_IF86(sp)
+		AS1(	pop		esp)
 		AS1(	emms)
-
 #ifdef __GNUC__
-		AS_POP_IF86(bx)
-		ATT_PREFIX
+		AS1(	pop		ebx)
+		".att_syntax prefix;"
 			:
 			: "a" (digest), "S" (X), "d" (table)
 			: "%ecx", "%edi", "memory", "cc"

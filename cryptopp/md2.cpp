@@ -93,7 +93,7 @@ void MD2::Update(const byte *buf, size_t len)
 					t=m_X[j+6]^=S[t];
 					t=m_X[j+7]^=S[t];
 				}
-				t = byte((t+i) & 0xFF);
+				t=(t+i) & 0xFF;
 			}
 		}
     }

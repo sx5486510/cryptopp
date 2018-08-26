@@ -1,7 +1,2 @@
-build/
-.DS_Store
-npm-debug.log
-*.key
-node_modules/
-/.vs
-*.o
+/build
+/node_modules

@@ -1,3 +1,7 @@
+1.msys.bat打开路径
+2.make build
+3.vs打开build目录里的sln
+
 # node-cryptopp
 
 __This module is not currently maintained. It was known to have [faults](https://gist.github.com/BatikhSouri/b4b76d2f4d0cd5e532f0). It hasn't been tested with test vectors. USE AT YOUR OWN RISK!__

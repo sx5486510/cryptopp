@@ -6,8 +6,7 @@
 
 #include "ec2n.h"
 #include "asn.h"
-#include "integer.h"
-#include "filters.h"
+
 #include "algebra.cpp"
 #include "eprecomp.cpp"
 
@@ -141,7 +140,6 @@ void EC2N::DEREncodePoint(BufferedTransformation &bt, const Point &P, bool compr
 
 bool EC2N::ValidateParameters(RandomNumberGenerator &rng, unsigned int level) const
 {
-	CRYPTOPP_UNUSED(rng);
 	bool pass = !!m_b;
 	pass = pass && m_a.CoefficientCount() <= m_field->MaxElementBitLength();
 	pass = pass && m_b.CoefficientCount() <= m_field->MaxElementBitLength();

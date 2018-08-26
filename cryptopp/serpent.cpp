@@ -1,9 +1,7 @@
 // serpent.cpp - written and placed in the public domain by Wei Dai
 
 #include "pch.h"
-
 #include "serpent.h"
-#include "secblock.h"
 #include "misc.h"
 
 #include "serpentp.h"

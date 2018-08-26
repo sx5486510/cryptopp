@@ -5,9 +5,6 @@
 #ifndef CRYPTOPP_IMPORTS
 
 #include "dsa.h"
-#include "asn.h"
-#include "integer.h"
-#include "filters.h"
 #include "nbtheory.h"
 
 NAMESPACE_BEGIN(CryptoPP)

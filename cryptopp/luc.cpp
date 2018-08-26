@@ -3,21 +3,18 @@
 #include "pch.h"
 #include "luc.h"
 #include "asn.h"
-#include "sha.h"
-#include "integer.h"
 #include "nbtheory.h"
+#include "sha.h"
 #include "algparam.h"
 
 NAMESPACE_BEGIN(CryptoPP)
 
-#if !defined(NDEBUG) && !defined(CRYPTOPP_DOXYGEN_PROCESSING)
 void LUC_TestInstantiations()
 {
 	LUC_HMP<SHA>::Signer t1;
 	LUCFunction t2;
 	InvertibleLUCFunction t3;
 }
-#endif
 
 void DL_Algorithm_LUC_HMP::Sign(const DL_GroupParameters<Integer> &params, const Integer &x, const Integer &k, const Integer &e, Integer &r, Integer &s) const
 {
@@ -28,7 +25,7 @@ void DL_Algorithm_LUC_HMP::Sign(const DL_GroupParameters<Integer> &params, const
 
 bool DL_Algorithm_LUC_HMP::Verify(const DL_GroupParameters<Integer> &params, const DL_PublicKey<Integer> &publicKey, const Integer &e, const Integer &r, const Integer &s) const
 {
-	const Integer p = params.GetGroupOrder()-1;
+	Integer p = params.GetGroupOrder()-1;
 	const Integer &q = params.GetSubgroupOrder();
 
 	Integer Vsg = params.ExponentiateBase(s);
@@ -71,7 +68,6 @@ Integer LUCFunction::ApplyFunction(const Integer &x) const
 
 bool LUCFunction::Validate(RandomNumberGenerator &rng, unsigned int level) const
 {
-	CRYPTOPP_UNUSED(rng), CRYPTOPP_UNUSED(level);
 	bool pass = true;
 	pass = pass && m_n > Integer::One() && m_n.IsOdd();
 	pass = pass && m_e > Integer::One() && m_e.IsOdd() && m_e < m_n;
@@ -169,7 +165,6 @@ void InvertibleLUCFunction::DEREncode(BufferedTransformation &bt) const
 Integer InvertibleLUCFunction::CalculateInverse(RandomNumberGenerator &rng, const Integer &x) const
 {
 	// not clear how to do blinding with LUC
-	CRYPTOPP_UNUSED(rng);
 	DoQuickSanityCheck();
 	return InverseLucas(m_e, x, m_q, m_p, m_u);
 }

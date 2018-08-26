@@ -1,9 +1,6 @@
 // socketft.cpp - written and placed in the public domain by Wei Dai
 
 #include "pch.h"
-
-// TODO: http://github.com/weidai11/cryptopp/issues/19
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "socketft.h"
 
 #ifdef SOCKETS_AVAILABLE
@@ -19,10 +16,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#ifdef PREFER_WINDOWS_STYLE_SOCKETS
-# pragma comment(lib, "ws2_32.lib")
-#endif
-
 NAMESPACE_BEGIN(CryptoPP)
 
 #ifdef USE_WINDOWS_STYLE_SOCKETS
@@ -33,11 +26,6 @@ typedef int socklen_t;
 const int SOCKET_EINVAL = EINVAL;
 const int SOCKET_EWOULDBLOCK = EWOULDBLOCK;
 #endif
-
-// Solaris doesn't have INADDR_NONE
-#ifndef INADDR_NONE
-# define INADDR_NONE	0xffffffff
-#endif /* INADDR_NONE */
 
 Socket::Err::Err(socket_t s, const std::string& operation, int error)
 	: OS_Error(IO_ERROR, "Socket: " + operation + " operation failed with error " + IntToString(error), operation, error)
@@ -53,9 +41,8 @@ Socket::~Socket()
 		{
 			CloseSocket();
 		}
-		catch (const Exception&)
+		catch (...)
 		{
-			assert(0);
 		}
 	}
 }
@@ -113,7 +100,7 @@ void Socket::Bind(unsigned int port, const char *addr)
 	else
 	{
 		unsigned long result = inet_addr(addr);
-		if (result == INADDR_NONE)
+		if (result == -1)	// Solaris doesn't have INADDR_NONE
 		{
 			SetLastError(SOCKET_EINVAL);
 			CheckAndHandleError_int("inet_addr", SOCKET_ERROR);
@@ -148,7 +135,7 @@ bool Socket::Connect(const char *addr, unsigned int port)
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = inet_addr(addr);
 
-	if (sa.sin_addr.s_addr == INADDR_NONE)
+	if (sa.sin_addr.s_addr == -1)	// Solaris doesn't have INADDR_NONE
 	{
 		hostent *lphost = gethostbyname(addr);
 		if (lphost == NULL)
@@ -156,10 +143,8 @@ bool Socket::Connect(const char *addr, unsigned int port)
 			SetLastError(SOCKET_EINVAL);
 			CheckAndHandleError_int("gethostbyname", SOCKET_ERROR);
 		}
-		else
-		{
-			sa.sin_addr.s_addr = ((in_addr *)lphost->h_addr)->s_addr;
-		}
+
+		sa.sin_addr.s_addr = ((in_addr *)lphost->h_addr)->s_addr;
 	}
 
 	sa.sin_port = htons((u_short)port);
@@ -325,7 +310,7 @@ void Socket::HandleError(const char *operation) const
 #ifdef USE_WINDOWS_STYLE_SOCKETS
 
 SocketReceiver::SocketReceiver(Socket &s)
-	: m_s(s), m_eofReceived(false), m_resultPending(false)
+	: m_s(s), m_resultPending(false), m_eofReceived(false)
 {
 	m_event.AttachHandle(CreateEvent(NULL, true, false, NULL), true);
 	m_s.CheckAndHandleError("CreateEvent", m_event.HandleValid());
@@ -491,7 +476,7 @@ unsigned int SocketSender::GetSendResult()
 #ifdef USE_BERKELEY_STYLE_SOCKETS
 
 SocketReceiver::SocketReceiver(Socket &s)
-	: m_s(s), m_eofReceived(false), m_lastResult(0)
+	: m_s(s), m_lastResult(0), m_eofReceived(false)
 {
 }
 

@@ -6,10 +6,6 @@
 
 #define CRYPTOPP_DEFAULT_NO_DLL
 #include "dll.h"
-#include "cryptlib.h"
-#include "filters.h"
-#include "smartptr.h"
-#include "misc.h"
 
 #ifdef CRYPTOPP_WIN32_AVAILABLE
 #define _WIN32_WINNT 0x0400
@@ -26,10 +22,6 @@ extern "C" {_CRTIMP void __cdecl _CRT_DEBUGGER_HOOK(int);}
 #endif
 
 #include <iostream>
-
-#if CRYPTOPP_MSC_VERSION
-# pragma warning(disable: 4100)
-#endif
 
 NAMESPACE_BEGIN(CryptoPP)
 
@@ -71,7 +63,6 @@ void X917RNG_KnownAnswerTest(
 	const char *output,
 	CIPHER *dummy = NULL)
 {
-	CRYPTOPP_UNUSED(dummy);
 #ifdef OS_RNG_AVAILABLE
 	std::string decodedKey, decodedSeed, decodedDeterministicTimeVector;
 	StringSource(key, true, new HexDecoder(new StringSink(decodedKey)));
@@ -112,7 +103,6 @@ void SymmetricEncryptionKnownAnswerTest(
 	const char *ctr,
 	CIPHER *dummy = NULL)
 {
-	CRYPTOPP_UNUSED(dummy);
 	std::string decodedKey;
 	StringSource(key, true, new HexDecoder(new StringSink(decodedKey)));
 
@@ -147,7 +137,6 @@ void KnownAnswerTest(HashTransformation &hash, const char *message, const char *
 template <class HASH>
 void SecureHashKnownAnswerTest(const char *message, const char *digest, HASH *dummy = NULL)
 {
-	CRYPTOPP_UNUSED(dummy);
 	HASH hash;
 	KnownAnswerTest(hash, message, digest);
 }
@@ -155,7 +144,6 @@ void SecureHashKnownAnswerTest(const char *message, const char *digest, HASH *du
 template <class MAC>
 void MAC_KnownAnswerTest(const char *key, const char *message, const char *digest, MAC *dummy = NULL)
 {
-	CRYPTOPP_UNUSED(dummy);
 	std::string decodedKey;
 	StringSource(key, true, new HexDecoder(new StringSink(decodedKey)));
 
@@ -169,7 +157,6 @@ void SignatureKnownAnswerTest(const char *key, const char *message, const char *
 	typename SCHEME::Signer signer(StringSource(key, true, new HexDecoder).Ref());
 	typename SCHEME::Verifier verifier(signer);
 
-	CRYPTOPP_UNUSED(dummy);
 	RandomPool rng;
 	EqualityComparisonFilter comparison;
 
@@ -247,7 +234,6 @@ void SignaturePairwiseConsistencyTest(const char *key, SCHEME *dummy = NULL)
 	typename SCHEME::Signer signer(StringSource(key, true, new HexDecoder).Ref());
 	typename SCHEME::Verifier verifier(signer);
 
-	CRYPTOPP_UNUSED(dummy);
 	SignaturePairwiseConsistencyTest(signer, verifier);
 }
 
@@ -259,14 +245,14 @@ MessageAuthenticationCode * NewIntegrityCheckingMAC()
 
 bool IntegrityCheckModule(const char *moduleFilename, const byte *expectedModuleMac, SecByteBlock *pActualMac, unsigned long *pMacFileLocation)
 {
-	member_ptr<MessageAuthenticationCode> mac(NewIntegrityCheckingMAC());
+	std::auto_ptr<MessageAuthenticationCode> mac(NewIntegrityCheckingMAC());
 	unsigned int macSize = mac->DigestSize();
 
 	SecByteBlock tempMac;
 	SecByteBlock &actualMac = pActualMac ? *pActualMac : tempMac;
 	actualMac.resize(macSize);
 
-	unsigned long tempLocation = 0;
+	unsigned long tempLocation;
 	unsigned long &macFileLocation = pMacFileLocation ? *pMacFileLocation : tempLocation;
 	macFileLocation = 0;
 
@@ -275,7 +261,7 @@ bool IntegrityCheckModule(const char *moduleFilename, const byte *expectedModule
 	std::ifstream moduleStream;
 
 #ifdef CRYPTOPP_WIN32_AVAILABLE
-	HMODULE h = NULL;
+	HMODULE h;
 	{
 	char moduleFilenameBuf[MAX_PATH] = "";
 	if (moduleFilename == NULL)
@@ -599,10 +585,10 @@ NAMESPACE_END
 
 // DllMain needs to be in the global namespace
 BOOL APIENTRY DllMain(HANDLE hModule, 
-                      DWORD  dwReason, 
-                      LPVOID /*lpReserved*/)
+                      DWORD  ul_reason_for_call, 
+                      LPVOID lpReserved)
 {
-	if (dwReason == DLL_PROCESS_ATTACH)
+	if (ul_reason_for_call == DLL_PROCESS_ATTACH)
 	{
 		CryptoPP::s_hModule = (HMODULE)hModule;
 		CryptoPP::DoDllPowerUpSelfTest();

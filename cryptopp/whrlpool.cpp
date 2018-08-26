@@ -64,33 +64,16 @@
  */
 
 #include "pch.h"
-#include "config.h"
-
-#if CRYPTOPP_MSC_VERSION
-# pragma warning(disable: 4127)
-#endif
-
 #include "whrlpool.h"
 #include "misc.h"
 #include "cpu.h"
 
-// "Inline assembly operands don't work with .intel_syntax",
-//   http://llvm.org/bugs/show_bug.cgi?id=24232
-#if defined(CRYPTOPP_DISABLE_INTEL_ASM)
-# undef CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE
-# undef CRYPTOPP_BOOL_SSSE3_ASM_AVAILABLE
-# define CRYPTOPP_BOOL_SSE2_ASM_AVAILABLE 0
-# define CRYPTOPP_BOOL_SSSE3_ASM_AVAILABLE 0
-#endif
-
 NAMESPACE_BEGIN(CryptoPP)
 
-#if !defined(NDEBUG) && !defined(CRYPTOPP_DOXYGEN_PROCESSING)
 void Whirlpool_TestInstantiations()
 {
 	Whirlpool x;
 }
-#endif
 
 void Whirlpool::InitState(HashWordType *state)
 {
@@ -418,7 +401,7 @@ void Whirlpool::Transform(word64 *digest, const word64 *block)
 	#endif
 	__asm__ __volatile__
 	(
-		INTEL_NOPREFIX
+		".intel_syntax noprefix;"
 		AS_PUSH_IF86(	bx)
 		AS2(	mov		AS_REG_6, WORD_REG(ax))
 #else
@@ -429,16 +412,12 @@ void Whirlpool::Transform(word64 *digest, const word64 *block)
 		AS2(	mov		WORD_REG(cx), digest)
 		AS2(	mov		WORD_REG(dx), block)
 #endif
-#if CRYPTOPP_BOOL_X86 || CRYPTOPP_BOOL_X32
+#if CRYPTOPP_BOOL_X86
 		AS2(	mov		eax, esp)
 		AS2(	and		esp, -16)
 		AS2(	sub		esp, 16*8)
-		AS_PUSH_IF86(	ax)
-	#if CRYPTOPP_BOOL_X86
-		#define SSE2_workspace	esp+WORD_SZ
-	#elif CRYPTOPP_BOOL_X32
-		#define SSE2_workspace	esp+(WORD_SZ*2)
-	#endif
+		AS1(	push	eax)
+	#define SSE2_workspace	esp+WORD_SZ
 #else
 	#define SSE2_workspace	%3
 #endif
@@ -590,7 +569,7 @@ void Whirlpool::Transform(word64 *digest, const word64 *block)
 		AS_POP_IF86(	bx)
 #endif
 #ifdef __GNUC__
-		ATT_PREFIX
+		".att_syntax prefix;"
 			:
 			: "a" (Whirlpool_C), "c" (digest), "d" (block)
 	#if CRYPTOPP_BOOL_X64
@@ -667,9 +646,8 @@ void Whirlpool::Transform(word64 *digest, const word64 *block)
 	int r=0;
 	while (true)
 	{
-		// Added initialization due to Coverity findings.
-		word64 w0=0, w1=0, w2=0, w3=0, w4=0, w5=0, w6=0, w7=0;
-		word32 t=0;
+		word64 w0, w1, w2, w3, w4, w5, w6, w7;	// temporary storage
+		word32 t;
 
 		KSL(0, 4, 3, 2, 1, 0)
 		KSL(0, 0, 7, 6, 5, 4)

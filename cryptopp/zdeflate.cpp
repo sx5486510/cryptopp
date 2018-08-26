@@ -7,14 +7,19 @@
 
 #include "pch.h"
 #include "zdeflate.h"
-#include "stdcpp.h"
-#include "misc.h"
+#include <functional>
+
+#if _MSC_VER >= 1600
+// for make_unchecked_array_iterator
+#include <iterator>
+#endif
 
 NAMESPACE_BEGIN(CryptoPP)
 
+using namespace std;
+
 LowFirstBitWriter::LowFirstBitWriter(BufferedTransformation *attachment)
-	: Filter(attachment), m_counting(false), m_bitCount(0), m_buffer(0)
-	, m_bitsBuffered(0), m_bytesBuffered(0)
+	: Filter(attachment), m_counting(false), m_buffer(0), m_bitsBuffered(0), m_bytesBuffered(0)
 {
 }
 
@@ -89,12 +94,6 @@ HuffmanEncoder::HuffmanEncoder(const unsigned int *codeBits, unsigned int nCodes
 
 struct HuffmanNode
 {
-	// Coverity finding on uninitalized 'symbol' member
-	HuffmanNode()
-		: symbol(0), parent(0) {}
-	HuffmanNode(const HuffmanNode& rhs)
-		: symbol(rhs.symbol), parent(rhs.parent) {}
-	
 	size_t symbol;
 	union {size_t parent; unsigned depth, freq;};
 };
@@ -119,11 +118,11 @@ void HuffmanEncoder::GenerateCodeLengths(unsigned int *codeBits, unsigned int ma
 		tree[i].symbol = i;
 		tree[i].freq = codeCounts[i];
 	}
-	std::sort(tree.begin(), tree.end(), FreqLessThan());
-	size_t treeBegin = std::upper_bound(tree.begin(), tree.end(), 0, FreqLessThan()) - tree.begin();
+	sort(tree.begin(), tree.end(), FreqLessThan());
+	size_t treeBegin = upper_bound(tree.begin(), tree.end(), 0, FreqLessThan()) - tree.begin();
 	if (treeBegin == nCodes)
 	{	// special case for no codes
-		std::fill(codeBits, codeBits+nCodes, 0);
+		fill(codeBits, codeBits+nCodes, 0);
 		return;
 	}
 	tree.resize(nCodes + nCodes - treeBegin - 1);
@@ -146,11 +145,10 @@ void HuffmanEncoder::GenerateCodeLengths(unsigned int *codeBits, unsigned int ma
 			tree[i].depth = tree[tree[i].parent].depth + 1;
 	unsigned int sum = 0;
 	SecBlockWithHint<unsigned int, 15+1> blCount(maxCodeBits+1);
-	std::fill(blCount.begin(), blCount.end(), 0);
+	fill(blCount.begin(), blCount.end(), 0);
 	for (i=treeBegin; i<nCodes; i++)
 	{
-		const size_t n = tree[i].parent;
-		const size_t depth = STDMIN(maxCodeBits, tree[n].depth + 1);
+		size_t depth = STDMIN(maxCodeBits, tree[tree[i].parent].depth + 1);
 		blCount[depth]++;
 		sum += 1 << (maxCodeBits - depth);
 	}
@@ -184,12 +182,12 @@ void HuffmanEncoder::GenerateCodeLengths(unsigned int *codeBits, unsigned int ma
 void HuffmanEncoder::Initialize(const unsigned int *codeBits, unsigned int nCodes)
 {
 	assert(nCodes > 0);
-	unsigned int maxCodeBits = *std::max_element(codeBits, codeBits+nCodes);
+	unsigned int maxCodeBits = *max_element(codeBits, codeBits+nCodes);
 	if (maxCodeBits == 0)
 		return;		// assume this object won't be used
 
 	SecBlockWithHint<unsigned int, 15+1> blCount(maxCodeBits+1);
-	std::fill(blCount.begin(), blCount.end(), 0);
+	fill(blCount.begin(), blCount.end(), 0);
 	unsigned int i;
 	for (i=0; i<nCodes; i++)
 		blCount[codeBits[i]]++;
@@ -238,12 +236,12 @@ Deflator::Deflator(const NameValuePairs &parameters, BufferedTransformation *att
 void Deflator::InitializeStaticEncoders()
 {
 	unsigned int codeLengths[288];
-	std::fill(codeLengths + 0, codeLengths + 144, 8);
-	std::fill(codeLengths + 144, codeLengths + 256, 9);
-	std::fill(codeLengths + 256, codeLengths + 280, 7);
-	std::fill(codeLengths + 280, codeLengths + 288, 8);
+	fill(codeLengths + 0, codeLengths + 144, 8);
+	fill(codeLengths + 144, codeLengths + 256, 9);
+	fill(codeLengths + 256, codeLengths + 280, 7);
+	fill(codeLengths + 280, codeLengths + 288, 8);
 	m_staticLiteralEncoder.Initialize(codeLengths, 288);
-	std::fill(codeLengths + 0, codeLengths + 32, 5);
+	fill(codeLengths + 0, codeLengths + 32, 5);
 	m_staticDistanceEncoder.Initialize(codeLengths, 32);
 }
 
@@ -264,9 +262,7 @@ void Deflator::IsolatedInitialize(const NameValuePairs &parameters)
 	m_matchBuffer.New(DSIZE/2);
 	Reset(true);
 
-	const int deflateLevel = parameters.GetIntValueWithDefault("DeflateLevel", DEFAULT_DEFLATE_LEVEL);
-	assert(deflateLevel >= MIN_DEFLATE_LEVEL /*0*/ && deflateLevel <= MAX_DEFLATE_LEVEL /*9*/);
-	SetDeflateLevel(deflateLevel);
+	SetDeflateLevel(parameters.GetIntValueWithDefault("DeflateLevel", DEFAULT_DEFLATE_LEVEL));
 	bool detectUncompressible = parameters.GetValueWithDefault("DetectUncompressible", true);
 	m_compressibleDeflateLevel = detectUncompressible ? m_deflateLevel : 0;
 }
@@ -292,10 +288,10 @@ void Deflator::Reset(bool forceReset)
 	m_detectSkip = 0;
 
 	// m_prev will be initialized automaticly in InsertString
-	std::fill(m_head.begin(), m_head.end(), byte(0));
+	fill(m_head.begin(), m_head.end(), 0);
 
-	std::fill(m_literalCounts.begin(), m_literalCounts.end(), byte(0));
-	std::fill(m_distanceCounts.begin(), m_distanceCounts.end(), byte(0));
+	fill(m_literalCounts.begin(), m_literalCounts.end(), 0);
+	fill(m_distanceCounts.begin(), m_distanceCounts.end(), 0);
 }
 
 void Deflator::SetDeflateLevel(int deflateLevel)
@@ -347,13 +343,10 @@ unsigned int Deflator::FillWindow(const byte *str, size_t length)
 		assert(m_blockStart >= DSIZE);
 		m_blockStart -= DSIZE;
 
-		// These are set to the same value in IsolatedInitialize(). If they
-		//   are the same, then we can clear a Coverity false alarm.
-		assert(DSIZE == HSIZE);
-
 		unsigned int i;
+
 		for (i=0; i<HSIZE; i++)
-			m_head[i] = SaturatingSubtract(m_head[i], HSIZE); // was DSIZE???
+			m_head[i] = SaturatingSubtract(m_head[i], DSIZE);
 
 		for (i=0; i<DSIZE; i++)
 			m_prev[i] = SaturatingSubtract(m_prev[i], DSIZE);
@@ -413,9 +406,7 @@ unsigned int Deflator::LongestMatch(unsigned int &bestMatch) const
 			{
 				bestLength = len;
 				bestMatch = current;
-
-				assert(scanEnd >= scan);
-				if (len == (unsigned int)(scanEnd - scan))
+				if (len == (scanEnd - scan))
 					break;
 			}
 		}
@@ -426,10 +417,9 @@ unsigned int Deflator::LongestMatch(unsigned int &bestMatch) const
 
 inline void Deflator::InsertString(unsigned int start)
 {
-	assert(start <= 0xffff);
 	unsigned int hash = ComputeHash(m_byteBuffer + start);
 	m_prev[start & DMASK] = m_head[hash];
-	m_head[hash] = word16(start);
+	m_head[hash] = start;
 }
 
 void Deflator::ProcessBuffer()
@@ -456,7 +446,7 @@ void Deflator::ProcessBuffer()
 
 		if (m_matchAvailable)
 		{
-			unsigned int matchPosition = 0, matchLength = 0;
+			unsigned int matchPosition, matchLength;
 			bool usePreviousMatch;
 			if (m_previousLength >= MAX_LAZYLENGTH)
 				usePreviousMatch = true;
@@ -579,20 +569,16 @@ void Deflator::MatchFound(unsigned int distance, unsigned int length)
 		283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283, 283,
 		284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284,
 		284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 285};
-	static const unsigned int lengthBases[] =
-		{3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,
-		 227,258};
+	static const unsigned int lengthBases[] = {3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258};
 	static const unsigned int distanceBases[30] = 
-		{1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,
-		 4097,6145,8193,12289,16385,24577};
+		{1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
 
-	assert(m_matchBufferEnd < m_matchBuffer.size());
 	EncodedMatch &m = m_matchBuffer[m_matchBufferEnd++];
-	assert(length >= 3 && length < COUNTOF(lengthCodes));
+	assert(length >= 3);
 	unsigned int lengthCode = lengthCodes[length-3];
 	m.literalCode = lengthCode;
 	m.literalExtra = length - lengthBases[lengthCode-257];
-	unsigned int distanceCode = (unsigned int)(std::upper_bound(distanceBases, distanceBases+30, distance) - distanceBases - 1);
+	unsigned int distanceCode = (unsigned int)(upper_bound(distanceBases, distanceBases+30, distance) - distanceBases - 1);
 	m.distanceCode = distanceCode;
 	m.distanceExtra = distance - distanceBases[distanceCode];
 
@@ -653,8 +639,8 @@ void Deflator::EncodeBlock(bool eof, unsigned int blockType)
 		assert(m_blockStart + m_blockLength <= m_byteBuffer.size());
 		assert(m_blockLength <= 0xffff);
 		FlushBitBuffer();
-		AttachedTransformation()->PutWord16(word16(m_blockLength), LITTLE_ENDIAN_ORDER);
-		AttachedTransformation()->PutWord16(word16(~m_blockLength), LITTLE_ENDIAN_ORDER);
+		AttachedTransformation()->PutWord16(m_blockLength, LITTLE_ENDIAN_ORDER);
+		AttachedTransformation()->PutWord16(~m_blockLength, LITTLE_ENDIAN_ORDER);
 		AttachedTransformation()->Put(m_byteBuffer + m_blockStart, m_blockLength);
 	}
 	else
@@ -662,12 +648,12 @@ void Deflator::EncodeBlock(bool eof, unsigned int blockType)
 		if (blockType == DYNAMIC)
 		{
 #if defined(_MSC_VER) && !defined(__MWERKS__) && (_MSC_VER <= 1300)
-			// VC60 and VC7 workaround: built-in std::reverse_iterator has two template parameters, Dinkumware only has one
+			// VC60 and VC7 workaround: built-in reverse_iterator has two template parameters, Dinkumware only has one
 			typedef reverse_bidirectional_iterator<unsigned int *, unsigned int> RevIt;
 #elif defined(_RWSTD_NO_CLASS_PARTIAL_SPEC)
-	typedef std::reverse_iterator<unsigned int *, random_access_iterator_tag, unsigned int> RevIt;
+	typedef reverse_iterator<unsigned int *, random_access_iterator_tag, unsigned int> RevIt;
 #else
-			typedef std::reverse_iterator<unsigned int *> RevIt;
+			typedef reverse_iterator<unsigned int *> RevIt;
 #endif
 
 			FixedSizeSecBlock<unsigned int, 286> literalCodeLengths;
@@ -676,22 +662,22 @@ void Deflator::EncodeBlock(bool eof, unsigned int blockType)
 			m_literalCounts[256] = 1;
 			HuffmanEncoder::GenerateCodeLengths(literalCodeLengths, 15, m_literalCounts, 286);
 			m_dynamicLiteralEncoder.Initialize(literalCodeLengths, 286);
-			unsigned int hlit = (unsigned int)(std::find_if(RevIt(literalCodeLengths.end()), RevIt(literalCodeLengths.begin()+257), std::bind2nd(std::not_equal_to<unsigned int>(), 0)).base() - (literalCodeLengths.begin()+257));
+			unsigned int hlit = (unsigned int)(find_if(RevIt(literalCodeLengths.end()), RevIt(literalCodeLengths.begin()+257), bind2nd(not_equal_to<unsigned int>(), 0)).base() - (literalCodeLengths.begin()+257));
 
 			HuffmanEncoder::GenerateCodeLengths(distanceCodeLengths, 15, m_distanceCounts, 30);
 			m_dynamicDistanceEncoder.Initialize(distanceCodeLengths, 30);
-			unsigned int hdist = (unsigned int)(std::find_if(RevIt(distanceCodeLengths.end()), RevIt(distanceCodeLengths.begin()+1), std::bind2nd(std::not_equal_to<unsigned int>(), 0)).base() - (distanceCodeLengths.begin()+1));
+			unsigned int hdist = (unsigned int)(find_if(RevIt(distanceCodeLengths.end()), RevIt(distanceCodeLengths.begin()+1), bind2nd(not_equal_to<unsigned int>(), 0)).base() - (distanceCodeLengths.begin()+1));
 
 			SecBlockWithHint<unsigned int, 286+30> combinedLengths(hlit+257+hdist+1);
 			memcpy(combinedLengths, literalCodeLengths, (hlit+257)*sizeof(unsigned int));
 			memcpy(combinedLengths+hlit+257, distanceCodeLengths, (hdist+1)*sizeof(unsigned int));
 
 			FixedSizeSecBlock<unsigned int, 19> codeLengthCodeCounts, codeLengthCodeLengths;
-			std::fill(codeLengthCodeCounts.begin(), codeLengthCodeCounts.end(), 0);
+			fill(codeLengthCodeCounts.begin(), codeLengthCodeCounts.end(), 0);
 			const unsigned int *p = combinedLengths.begin(), *begin = combinedLengths.begin(), *end = combinedLengths.end();
 			while (p != end)
 			{
-				unsigned int code=0, extraBits=0, extraBitsLength=0;
+				unsigned int code, extraBits, extraBitsLength;
 				code = CodeLengthEncode(begin, end, p, extraBits, extraBitsLength);
 				codeLengthCodeCounts[code]++;
 			}
@@ -714,7 +700,7 @@ void Deflator::EncodeBlock(bool eof, unsigned int blockType)
 			p = combinedLengths.begin();
 			while (p != end)
 			{
-				unsigned int code=0, extraBits=0, extraBitsLength=0;
+				unsigned int code, extraBits, extraBitsLength;
 				code = CodeLengthEncode(begin, end, p, extraBits, extraBitsLength);
 				codeLengthEncoder.Encode(*this, code);
 				PutBits(extraBits, extraBitsLength);
@@ -808,8 +794,8 @@ void Deflator::EndBlock(bool eof)
 	m_matchBufferEnd = 0;
 	m_blockStart += m_blockLength;
 	m_blockLength = 0;
-	std::fill(m_literalCounts.begin(), m_literalCounts.end(), 0);
-	std::fill(m_distanceCounts.begin(), m_distanceCounts.end(), 0);
+	fill(m_literalCounts.begin(), m_literalCounts.end(), 0);
+	fill(m_distanceCounts.begin(), m_distanceCounts.end(), 0);
 }
 
 NAMESPACE_END

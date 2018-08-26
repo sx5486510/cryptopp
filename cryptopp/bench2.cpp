@@ -1,15 +1,10 @@
 // bench2.cpp - written and placed in the public domain by Wei Dai
 
-#include "cryptlib.h"
-#include "pubkey.h"
-#include "gfpcrypt.h"
-#include "eccrypto.h"
 #include "bench.h"
 #include "validate.h"
-
 #include "files.h"
-#include "filters.h"
 #include "hex.h"
+
 #include "rsa.h"
 #include "nr.h"
 #include "dsa.h"
@@ -32,11 +27,6 @@
 #include <iostream>
 #include <iomanip>
 
-// These are noisy enoguh due to test.cpp. Turn them off here.
-#if CRYPTOPP_GCC_DIAGNOSTIC_AVAILABLE
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 USING_NAMESPACE(CryptoPP)
 USING_NAMESPACE(std)
 
@@ -48,7 +38,7 @@ void BenchMarkEncryption(const char *name, PK_Encryptor &key, double timeTotal, 
 	SecByteBlock plaintext(len), ciphertext(key.CiphertextLength(len));
 	GlobalRNG().GenerateBlock(plaintext, len);
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
@@ -71,7 +61,7 @@ void BenchMarkDecryption(const char *name, PK_Decryptor &priv, PK_Encryptor &pub
 	GlobalRNG().GenerateBlock(plaintext, len);
 	pub.Encrypt(GlobalRNG(), plaintext, len, ciphertext);
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
@@ -86,7 +76,7 @@ void BenchMarkSigning(const char *name, PK_Signer &key, double timeTotal, bool p
 	AlignedSecByteBlock message(len), signature(key.SignatureLength());
 	GlobalRNG().GenerateBlock(message, len);
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
@@ -108,15 +98,11 @@ void BenchMarkVerification(const char *name, const PK_Signer &priv, PK_Verifier 
 	GlobalRNG().GenerateBlock(message, len);
 	priv.SignMessage(GlobalRNG(), message, len, signature);
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
-	{
-		// The return value is ignored because we are interested in throughput
-		bool unused = pub.VerifyMessage(message, len, signature, signature.size());
-		CRYPTOPP_UNUSED(unused);
-	}
+		pub.VerifyMessage(message, len, signature, signature.size());
 
 	OutputResultOperations(name, "Verification", pc, i, timeTaken);
 
@@ -131,7 +117,7 @@ void BenchMarkKeyGen(const char *name, SimpleKeyAgreementDomain &d, double timeT
 {
 	SecByteBlock priv(d.PrivateKeyLength()), pub(d.PublicKeyLength());
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
@@ -150,7 +136,7 @@ void BenchMarkKeyGen(const char *name, AuthenticatedKeyAgreementDomain &d, doubl
 {
 	SecByteBlock priv(d.EphemeralPrivateKeyLength()), pub(d.EphemeralPublicKeyLength());
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i++)
@@ -173,7 +159,7 @@ void BenchMarkAgreement(const char *name, SimpleKeyAgreementDomain &d, double ti
 	d.GenerateKeyPair(GlobalRNG(), priv2, pub2);
 	SecByteBlock val(d.AgreedValueLength());
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i+=2)
@@ -197,7 +183,7 @@ void BenchMarkAgreement(const char *name, AuthenticatedKeyAgreementDomain &d, do
 	d.GenerateEphemeralKeyPair(GlobalRNG(), epriv2, epub2);
 	SecByteBlock val(d.AgreedValueLength());
 
-	const clock_t start = clock();
+	clock_t start = clock();
 	unsigned int i;
 	double timeTaken;
 	for (timeTaken=(double)0, i=0; timeTaken < timeTotal; timeTaken = double(clock() - start) / CLOCK_TICKS_PER_SECOND, i+=2)
@@ -213,8 +199,6 @@ void BenchMarkAgreement(const char *name, AuthenticatedKeyAgreementDomain &d, do
 template <class SCHEME>
 void BenchMarkCrypto(const char *filename, const char *name, double timeTotal, SCHEME *x=NULL)
 {
-	CRYPTOPP_UNUSED(x);
-
 	FileSource f(filename, true, new HexDecoder());
 	typename SCHEME::Decryptor priv(f);
 	typename SCHEME::Encryptor pub(priv);
@@ -226,8 +210,6 @@ void BenchMarkCrypto(const char *filename, const char *name, double timeTotal, S
 template <class SCHEME>
 void BenchMarkSignature(const char *filename, const char *name, double timeTotal, SCHEME *x=NULL)
 {
-	CRYPTOPP_UNUSED(x);
-
 	FileSource f(filename, true, new HexDecoder());
 	typename SCHEME::Signer priv(f);
 	typename SCHEME::Verifier pub(priv);
@@ -239,8 +221,6 @@ void BenchMarkSignature(const char *filename, const char *name, double timeTotal
 template <class D>
 void BenchMarkKeyAgreement(const char *filename, const char *name, double timeTotal, D *x=NULL)
 {
-	CRYPTOPP_UNUSED(x);
-
 	FileSource f(filename, true, new HexDecoder());
 	D d(f);
 	BenchMarkKeyGen(name, d, timeTotal);

@@ -57,7 +57,6 @@ void CMAC_Base::UncheckedSetKey(const byte *key, unsigned int length, const Name
 
 void CMAC_Base::Update(const byte *input, size_t length)
 {
-	assert((input && length) || !(input || length));
 	if (!length)
 		return;
 
@@ -66,14 +65,11 @@ void CMAC_Base::Update(const byte *input, size_t length)
 
 	if (m_counter > 0)
 	{
-		const unsigned int len = UnsignedMin(blockSize - m_counter, length);
-		if (len)
-		{
-			xorbuf(m_reg+m_counter, input, len);
-			length -= len;
-			input += len;
-			m_counter += len;
-		}
+		unsigned int len = UnsignedMin(blockSize - m_counter, length);
+		xorbuf(m_reg+m_counter, input, len);
+		length -= len;
+		input += len;
+		m_counter += len;
 
 		if (m_counter == blockSize && length > 0)
 		{
