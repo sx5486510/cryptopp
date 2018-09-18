@@ -138,7 +138,7 @@ void CBC_AESEncryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info)
 	{
 		CBC_Mode< AES >::Encryption e;
 		e.SetKeyWithIV(key, key.size(), iv);
-		StringSource s(plain, true, new StreamTransformationFilter(e, new StringSink(cipher))); // StringSource
+		StringSource s(plain, true, new StreamTransformationFilter(e, new StringSink(cipher), StreamTransformationFilter::ZEROS_PADDING)); // StringSource
 
 	// Pretty print
 		encoded.clear();
@@ -199,14 +199,20 @@ void CBC_AESDecryptStr(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 		// The StreamTransformationFilter removes
 		// 	padding as required.
 
-		StringSource s(cipherText/*cipher*/, true, new Base64Decoder(new StreamTransformationFilter(d, (new StringSink(recovered))))); // StringSource
+		StringSource s(cipherText/*cipher*/, true, new Base64Decoder(new StreamTransformationFilter(d, (new StringSink(recovered)), StreamTransformationFilter::ZEROS_PADDING))); // StringSource
 	}
 	catch (const CryptoPP::Exception& e)
 	{
 		cout << e.what() << endl;
 	}
 
-	v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)recovered.data(), recovered.size()).ToLocalChecked();
+	int len = strlen(recovered.c_str());
+	if (len > 0)
+	{
+		recovered.resize(len);
+	}
+
+	v8::Local<v8::Value> returnValue = Nan::CopyBuffer((char*)recovered.data(), recovered.length()).ToLocalChecked();
 	info.GetReturnValue().Set(
 		returnValue
 	);
